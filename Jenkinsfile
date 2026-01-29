@@ -12,9 +12,9 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                sh 'docker build -t customer-order-service .'
+                sh 'docker build -t customer-order-service -f docker/Dockerfile .'
             }
-        }
+        } 
 
         stage('Run Docker Container') {
             steps {
