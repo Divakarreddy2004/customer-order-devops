@@ -63,7 +63,7 @@ The CI/CD workflow follows these stages:
 
 ## Pipeline Architecture
 
-Developer
+Developer(Writes the Code)
     |
     v
 Git Repository (GitHub)
