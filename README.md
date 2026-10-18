@@ -445,7 +445,7 @@ Use this if Jenkins is not reachable from GitHub.
 Jenkins Job → **Configure** → **Build Triggers** → **Poll SCM**
 
 ```text
-H/5 * * * *
+* * * * *
 ```
 
 This checks GitHub every 5 minutes and builds only when there is a new commit. The cron expression must have exactly **5 fields**.
