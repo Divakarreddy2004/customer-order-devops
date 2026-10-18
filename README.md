@@ -492,7 +492,7 @@ docker logs customer-order-app     # view application logs
 
 ---
 
-## Future Improvements(further)
+## Future Improvements
 
 - Add code quality analysis with SonarQube
 - Add image vulnerability scanning (Trivy or ECR scanning)
