@@ -145,7 +145,8 @@ pipeline {
 Jenkins Job → **Configure** → **Build Triggers** → tick **Poll SCM**
 
 ```text
-H/5 * * * *
+
+* * * * *
 ```
 
 - Jenkins checks GitHub **every 5 minutes** and builds only when there is a new commit.
