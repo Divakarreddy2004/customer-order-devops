@@ -209,6 +209,16 @@ You can also click **Build Now** to run the pipeline manually at any time.
 
 ---
 
+## Change Log
+
+| Date | Change |
+|------|--------|
+| Oct 18, 2026 | Created the 4-stage Jenkins pipeline (checkout, compile, test, WAR package) |
+| Oct 18, 2026 | Enabled Poll SCM for automatic builds on push to `main` |
+| Oct 18, 2026 | Updated README and re-tested the automatic trigger (Jenkins build #23) |
+
+---
+
 ## Author
 
 **Divakar Reddy**
