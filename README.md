@@ -128,11 +128,6 @@ pipeline {
         }
     }
 
-    post {
-        success {
-            archiveArtifacts artifacts: 'target/*.war', fingerprint: true
-        }
-    }
 }
 ```
 
