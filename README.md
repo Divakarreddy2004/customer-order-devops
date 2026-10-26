@@ -195,7 +195,6 @@ You can also click **Build Now** to run the pipeline manually at any time.
 ## Future Improvements
 
 - We need to connect to docker and AWS
-- we can use webhooks as well
 - Publish test results with `junit 'target/surefire-reports/*.xml'`
 - Deploy the WAR to Tomcat automatically
 - Move the pipeline script into a `Jenkinsfile` in the repo (Pipeline script from SCM)
