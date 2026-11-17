@@ -19,7 +19,7 @@ pipeline {
         stage('Run Docker Container') {
             steps {
                 sh 'docker rm -f customer-order || true'
-                sh 'docker run -d -p 8080:8080 --name customer-order customer-order-service'
+                sh 'docker run -d -p 8081:8080 --name customer-order customer-order-service'
             }
         }
     }
