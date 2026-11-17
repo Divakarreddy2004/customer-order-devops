@@ -1,3 +1,4 @@
+
 pipeline {
     agent any
 
@@ -5,8 +6,7 @@ pipeline {
 
         stage('Checkout Code') {
             steps {
-                git branch: 'main',
-                    url: 'https://github.com/Divakarreddy2004/customer-order-devops.git'
+                checkout scm
             }
         }
 
@@ -14,7 +14,7 @@ pipeline {
             steps {
                 sh 'docker build -t customer-order-service -f docker/Dockerfile .'
             }
-        } 
+        }
 
         stage('Run Docker Container') {
             steps {
