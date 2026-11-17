@@ -1,222 +1,343 @@
-# Customer Order Management – Jenkins CI Pipeline
+# Customer Order Management – Jenkins Multibranch Pipeline with Docker
 
-A Jenkins CI pipeline for a **Customer Order Management** Java application. Every new commit pushed to the `main` branch on GitHub triggers Jenkins, which checks out the code, compiles it, runs unit tests, and packages the application as a **WAR artifact**.
+A DevOps project demonstrating automated CI/CD using **Git, GitHub, Jenkins Multibranch Pipeline, Docker, and AWS EC2**.
+
+Whenever code is pushed to a configured GitHub branch, Jenkins automatically discovers the branch, checks out the source code, builds a Docker image, and deploys the application inside a Docker container.
 
 ---
 
 ## Table of Contents
 
-1. [Project Overview](#project-overview)
-2. [Technology Stack](#technology-stack)
-3. [Pipeline Architecture](#pipeline-architecture)
-4. [Pipeline Stages](#pipeline-stages)
-5. [Repository Structure](#repository-structure)
-6. [Prerequisites](#prerequisites)
-7. [Jenkins Setup](#jenkins-setup)
-8. [Pipeline Script](#pipeline-script)
-9. [Automatic Build Trigger](#automatic-build-trigger)
-10. [Verify the Pipeline](#verify-the-pipeline)
-11. [Troubleshooting](#troubleshooting)
-12. [Future Improvements](#future-improvements)
+1. Project Overview
+2. Technology Stack
+3. Project Architecture
+4. Multibranch Pipeline Workflow
+5. Pipeline Stages
+6. Repository Structure
+7. Prerequisites
+8. AWS EC2 Setup
+9. Jenkins Multibranch Pipeline Configuration
+10. Jenkinsfile
+11. Branch-Based Docker Deployment
+12. Verify the Pipeline
+13. Troubleshooting
+14. Future Improvements
+15. Author
 
 ---
 
-## Project Overview
+## 1. Project Overview
 
-- **Git / GitHub** host and track the source code.
-- **Jenkins** automates the build, test, and packaging steps.
-- **Maven** compiles the code, runs tests, and produces the WAR file.
+The objective of this project is to automate application deployment using Jenkins Multibranch Pipeline and Docker.
 
-The goal is to remove manual build work: a single `git push` starts the whole pipeline.
+Key features:
 
-## Technology Stack
+- GitHub integration for source code management.
+- Automatic branch discovery using Jenkins Multibranch Pipeline.
+- Automatic source code checkout using `checkout scm`.
+- Docker image creation using a Dockerfile.
+- Automated Docker container deployment.
+- Separate Docker containers for different branches.
+- Deployment on AWS EC2.
+
+## 2. Technology Stack
 
 | Technology | Purpose |
-|------------|---------|
+|---|---|
 | Git | Version control |
 | GitHub | Source code repository |
-| Jenkins | CI automation server |
-| Maven | Build and dependency management |
-| Java (JDK) | Application development |
-| Tomcat (planned) | WAR deployment target |
+| Jenkins | CI/CD automation |
+| Jenkins Multibranch Pipeline | Automatic branch discovery and builds |
+| Docker | Application containerization |
+| Dockerfile | Docker image creation |
+| AWS EC2 | Cloud infrastructure |
+| Ubuntu | Operating system |
+| Shell Scripting | Pipeline automation |
 
-## Pipeline Architecture
+## 3. Project Architecture
 
+```text
+                 Developer
+                     |
+                     | git push
+                     v
+              GitHub Repository
+                     |
+          +----------+----------+
+          |                     |
+       main branch          demo branch
+          |                     |
+          +----------+----------+
+                     |
+                     v
+          Jenkins Multibranch Pipeline
+                     |
+              Branch Discovery
+                     |
+                checkout scm
+                     |
+                     v
+             Build Docker Image
+                     |
+                     v
+             Run Docker Container
+                     |
+             +-------+-------+
+             |               |
+          main branch     demo branch
+             |               |
+          Port 8081       Port 8082
+             |               |
+             v               v
+       Docker Container  Docker Container
+                     |
+                     v
+                 AWS EC2
 ```
-Developer
-    |
-    |  git push (main)
-    v
-GitHub Repository
-    |
-    |  Poll SCM (Jenkins checks for new commits)
-    v
-Jenkins
-    |
-    +--> 1. Code Checkout
-    +--> 2. Code Compile
-    +--> 3. Unit Test
-    +--> 4. Create WAR Artifact
-    |
-    v
-target/*.war
-```
 
-## Pipeline Stages
+## 4. Multibranch Pipeline Workflow
+
+1. Developer pushes code to GitHub.
+2. Jenkins scans the configured GitHub repository.
+3. Jenkins discovers branches containing a Jenkinsfile.
+4. Jenkins creates separate pipeline jobs for discovered branches.
+5. Jenkins checks out the appropriate branch using `checkout scm`.
+6. Jenkins builds the Docker image.
+7. Jenkins runs the Docker container.
+8. Each configured branch gets its own container name and host port.
+
+## 5. Pipeline Stages
 
 | Stage | Command | Purpose |
-|-------|---------|---------|
-| Code Checkout | `git branch: 'main', url: '...'` | Pull the latest code from GitHub |
-| Code Compile | `mvn clean compile` | Compile the Java source code |
-| Unit Test | `mvn test` | Run unit tests |
-| Create WAR Artifact | `mvn package` | Build the WAR file in `target/` |
+|---|---|---|
+| Checkout Code | `checkout scm` | Checks out the current branch |
+| Build Docker Image | `docker build` | Creates the Docker image |
+| Run Docker Container | `docker run` | Deploys the application |
 
-## Repository Structure
+## 6. Repository Structure
 
-```
+```text
 customer-order-devops/
+│
 ├── src/
-│   ├── main/java/...          # Application source code
-│   └── test/java/...          # Unit tests
-├── pom.xml                    # Maven build configuration
-└── README.md                  # Project documentation
+│   ├── main/
+│   └── test/
+│
+├── docker/
+│   └── Dockerfile
+│
+├── Jenkinsfile
+├── pom.xml
+└── README.md
 ```
 
-## Prerequisites
+## 7. Prerequisites
 
-- A GitHub repository containing the application code
-- Jenkins installed and running
-- On the Jenkins machine: **Git**, **JDK**, and **Maven** (check with `git --version`, `java -version`, `mvn -v`)
-- A Linux/macOS agent (the pipeline uses `sh`; on Windows, use `bat` instead)
+- GitHub repository.
+- Jenkins installed on Ubuntu EC2.
+- Docker Engine installed.
+- Docker permissions configured for the Jenkins user.
+- Jenkins GitHub Branch Source plugin.
+- AWS EC2 instance with sufficient disk space.
+- Inbound security group rules for application ports.
 
-## Jenkins Setup
+Verify installations:
 
-1. Jenkins Dashboard → **New Item**
-2. Enter a name and choose **Pipeline** → **OK**
-3. Under **Pipeline**, set **Definition** to **Pipeline script** and paste the script below
-4. Click **Save**
+```bash
+git --version
+docker --version
+java -version
+```
 
-## Pipeline Script
+## 8. AWS EC2 Setup
+
+Jenkins is hosted on an Ubuntu EC2 instance.
+
+Important configurations:
+
+- Jenkins runs on port 8080.
+- Docker Engine is installed on the EC2 instance.
+- Jenkins user has permission to execute Docker commands.
+- EBS root volume is configured with sufficient storage.
+- Application ports 8081 and 8082 are configured in the EC2 Security Group when external access is required.
+
+## 9. Jenkins Multibranch Pipeline Configuration
+
+1. Open Jenkins Dashboard.
+2. Select New Item.
+3. Enter the pipeline name.
+4. Select Multibranch Pipeline.
+5. Configure Branch Sources.
+6. Select GitHub.
+7. Provide the GitHub repository URL.
+8. Configure credentials if required.
+9. Enable branch discovery.
+10. Configure Pull Request discovery if required.
+11. Save the configuration.
+12. Select Scan Multibranch Pipeline Now.
+
+Jenkins automatically discovers branches containing a Jenkinsfile.
+
+**Important:** Unlike a normal Pipeline, the Git repository URL and branch selection are configured in Branch Sources, not hardcoded in the Jenkinsfile.
+
+## 10. Jenkinsfile
 
 ```groovy
 pipeline {
     agent any
 
+    options {
+        skipDefaultCheckout(true)
+    }
+
     stages {
-        stage('Code Checkout') {
+
+        stage('Checkout Code') {
             steps {
-                git branch: 'main', url: 'https://github.com/Divakarreddy2004/customer-order-devops.git'
+                checkout scm
             }
         }
 
-        stage('Code Compile') {
+        stage('Build Docker Image') {
             steps {
-                sh 'mvn clean compile'
+                sh 'docker build -t customer-order-service -f docker/Dockerfile .'
             }
         }
 
-        stage('Unit Test') {
+        stage('Run Docker Container') {
             steps {
-                sh 'mvn test'
-            }
-        }
+                script {
+                    def branch = env.BRANCH_NAME.replaceAll(
+                        /[^a-zA-Z0-9_.-]/, '-'
+                    )
 
-        stage('Create WAR Artifact') {
-            steps {
-                sh 'mvn package'
+                    def port = branch == 'main' ? '8081' : '8082'
+
+                    sh "docker rm -f customer-order-${branch} || true"
+
+                    sh """
+                        docker run -d \
+                        -p ${port}:8080 \
+                        --name customer-order-${branch} \
+                        customer-order-service
+                    """
+                }
             }
         }
     }
-
 }
 ```
 
-> The `post` block keeps the WAR file on the build page so it can be downloaded after the build.
+## 11. Branch-Based Docker Deployment
 
-## Automatic Build Trigger
+Different branches use different Docker container names and host ports.
 
-### Option 1: Poll SCM (used in this project)
+| Branch | Container Name | Host Port | Container Port |
+|---|---|---|---|
+| main | customer-order-main | 8081 | 8080 |
+| demo | customer-order-demo | 8082 | 8080 |
 
-Jenkins Job → **Configure** → **Build Triggers** → tick **Poll SCM**
+The pipeline uses the Jenkins environment variable `BRANCH_NAME` to identify the branch.
 
-```text
+This avoids Docker container name conflicts when multiple branches execute on the same Docker host.
 
-* * * * *
+### Docker Commands
+
+Build image:
+
+```bash
+docker build -t customer-order-service -f docker/Dockerfile .
 ```
 
-- Jenkins checks GitHub **every 5 minutes** and builds only when there is a new commit.
-- The cron expression must have exactly **5 fields**.
-- `* * * * *` checks every minute. It works, but Jenkins warns that it is wasteful, so `H/5 * * * *` is preferred.
-- Remember to click **Save** after changing the schedule.
+Run main container:
 
-### Option 2: GitHub Webhook (instant builds)
+```bash
+docker run -d -p 8081:8080 \
+--name customer-order-main customer-order-service
+```
 
-Use this only if Jenkins is reachable from the internet.
+Run demo container:
 
-**In Jenkins:** Job → **Configure** → **Build Triggers** → tick **GitHub hook trigger for GITScm polling** → **Save**.
+```bash
+docker run -d -p 8082:8080 \
+--name customer-order-demo customer-order-service
+```
 
-**In GitHub:** Repository → **Settings** → **Webhooks** → **Add webhook**
+Check running containers:
 
-| Field | Value |
-|-------|-------|
-| Payload URL | `http://<JENKINS-URL>:8080/github-webhook/` |
-| Content type | `application/json` |
-| Events | Just the push event |
+```bash
+docker ps
+```
 
-> The trailing slash in the Payload URL is required.
+Check Docker images:
 
-## Verify the Pipeline
+```bash
+docker images
+```
 
-1. Edit a file (for example, add a line to this README).
-2. Commit and push:
+## 12. Verify the Pipeline
 
-   ```bash
-   git add .
-   git commit -m "Test CI trigger"
-   git push origin main
-   ```
-3. Wait for the next poll. A new build appears in **Build History** and says **"Started by an SCM change"**.
-4. Open the build → **Console Output** and confirm all four stages are green.
-5. Download the WAR from the build page under **Build Artifacts**.
+1. Create a new branch in GitHub.
+2. Add or update the Jenkinsfile.
+3. Commit and push the changes.
+4. Run Scan Multibranch Pipeline Now if automatic discovery has not occurred.
+5. Open the discovered branch job.
+6. Verify all pipeline stages.
+7. Check Docker containers on EC2.
 
-You can also click **Build Now** to run the pipeline manually at any time.
+```bash
+sudo docker ps
+```
 
-## Troubleshooting
+Access the application using:
 
-| Problem | Likely cause | Fix |
-|---------|--------------|-----|
-| Warning: "Do you really mean every minute" | Schedule is `* * * * *` | Use `H/5 * * * *` |
-| Build does not start after a push | Poll SCM not saved, or wrong branch | Click **Save**, check the commit is on `main`, and open the **Git Polling Log** |
-| `mvn: command not found` | Maven not installed on the agent | `sudo apt install maven` or configure Maven in Jenkins tools |
-| `sh` fails on Windows | Windows agent | Use `bat 'mvn ...'` instead of `sh` |
-| `Couldn't find any revision to build` | Wrong branch name | Confirm the branch name in GitHub and match it in the script |
-| Pipeline fails at Unit Test | Failing tests | Check the console output and `target/surefire-reports` |
+```text
+http://EC2-PUBLIC-IP:8081
+http://EC2-PUBLIC-IP:8082
+```
 
-## Future Improvements
+The application must be listening on container port 8080.
 
-- We need to connect to docker and AWS
-- Publish test results with `junit 'target/surefire-reports/*.xml'`
-- Deploy the WAR to Tomcat automatically
-- Move the pipeline script into a `Jenkinsfile` in the repo (Pipeline script from SCM)
-- Containerize the application with Docker and push images to AWS ECR
-- Deploy the container to AWS EC2
-- Add code quality analysis with SonarQube
-- Add Slack or email notifications for build results
-- Switch from polling to a GitHub webhook
+## 13. Troubleshooting
 
----
+| Problem | Possible Cause | Solution |
+|---|---|---|
+| `checkout scm` failure | Incorrect branch source configuration | Verify GitHub repository configuration |
+| `docker: not found` | Docker not installed | Install Docker Engine |
+| Docker permission denied | Jenkins user lacks Docker permissions | Add Jenkins user to Docker group |
+| Container name conflict | Duplicate container name | Use branch-specific container names |
+| Port already in use | Another service occupies the host port | Use a different host port |
+| Disk space warning | Insufficient EC2 storage | Increase EBS volume and expand filesystem |
+| Branch not discovered | Branch discovery not configured | Check Branch Sources and scan repository |
 
-## Change Log
+## 14. Future Improvements
 
-| Date | Change |
-|------|--------|
-| Oct 18, 2026 | Created the 4-stage Jenkins pipeline (checkout, compile, test, WAR package) |
-| Oct 18, 2026 | Enabled Poll SCM for automatic builds on push to `main` |
-| Oct 18, 2026 | Updated README and re-tested the automatic trigger (Jenkins build #23) |
+- Implement GitHub Pull Request builds.
+- Integrate Docker image tagging based on Git branch and commit ID.
+- Push Docker images to AWS ECR.
+- Deploy applications using Kubernetes.
+- Automate infrastructure using Terraform.
+- Configure Ansible for server provisioning.
+- Integrate Prometheus and Grafana for monitoring.
+- Implement Jenkins email notifications.
+- Add SonarQube for code quality analysis.
 
----
-
-## Author
+## 15. Author
 
 **Divakar Reddy**
-GitHub: [Divakarreddy2004](https://github.com/Divakarreddy2004)
+
+GitHub: https://github.com/Divakarreddy2004
+
+LinkedIn: https://www.linkedin.com/in/divakarreddy2004
+
+---
+
+## Project Learning Outcomes
+
+- Git and GitHub branch management.
+- Jenkins Multibranch Pipeline configuration.
+- SCM-based source code checkout.
+- Docker image creation and container management.
+- Branch-specific application deployment.
+- AWS EC2 administration and disk management.
+- CI/CD troubleshooting and automation.
